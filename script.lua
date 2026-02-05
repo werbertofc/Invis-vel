@@ -1,29 +1,32 @@
 --[[
-    WERBERT GOD V7 - MODO ESTATUA (CORPO NULO)
+    WERBERT GOD V8 - O ZUMBI (NO-ROOT)
     Criado por: @werbert_ofc
     
-    LÓGICA SUPREMA:
-    - Se você aceita ficar parado, nós DELETAMOS seu corpo físico.
-    - Mantemos apenas a 'HumanoidRootPart' (invisível e ancorada) para o servidor não te matar.
-    - Sem braços, sem pernas, sem cabeça = SEM HITBOX.
-    - Impossível de acertar tiro ou facada.
+    ESTRATÉGIA SUPREMA (ESTÁTICA):
+    1. Ancora o Tronco (Torso) para não cair.
+    2. Deleta a 'HumanoidRootPart' (A peça que recebe 99% dos danos).
+    3. Remove braços e pernas para diminuir a área de contato.
+    4. Resultado: O personagem quebra a lógica de dano do jogo e fica imortal.
 ]]
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Limpeza
 if getgenv().WerbertUI then getgenv().WerbertUI:Destroy() end
 
-local isStatueActive = false
+-- Variáveis
+local isZombieActive = false
+local originalCFrame = nil -- Para salvar onde você estava
 
 -- ==============================================================================
--- INTERFACE MODERNA (MINIMALISTA)
+-- INTERFACE MODERNA (PRETO E ROXO)
 -- ==============================================================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "WerbertGodV7"
+ScreenGui.Name = "WerbertGodV8"
 if pcall(function() ScreenGui.Parent = CoreGui end) then
     getgenv().WerbertUI = ScreenGui
 else
@@ -55,12 +58,12 @@ end
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 260, 0, 180)
 MainFrame.Position = UDim2.new(0.5, -130, 0.5, -90)
-MainFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5) -- Preto Absoluto
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 10, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(255, 255, 255) -- Branco
+Stroke.Color = Color3.fromRGB(170, 0, 255) -- Roxo
 Stroke.Thickness = 2
 Stroke.Parent = MainFrame
 
@@ -68,8 +71,8 @@ Stroke.Parent = MainFrame
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "GOD V7: CORPO NULO"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "GOD V8: O ZUMBI"
+Title.TextColor3 = Color3.fromRGB(170, 0, 255)
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 18
 Title.Parent = MainFrame
@@ -100,8 +103,8 @@ Instance.new("UICorner", MiniBtn).CornerRadius = UDim.new(0, 6)
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0.85, 0, 0, 60)
 ToggleBtn.Position = UDim2.new(0.075, 0, 0.35, 0)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ToggleBtn.Text = "ATIVAR MODO ESTATUA"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+ToggleBtn.Text = "ATIVAR MODO ZUMBI"
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextSize = 14
@@ -113,7 +116,7 @@ local Status = Instance.new("TextLabel")
 Status.Size = UDim2.new(1, 0, 0, 20)
 Status.Position = UDim2.new(0, 0, 0.75, 0)
 Status.BackgroundTransparency = 1
-Status.Text = "Status: Corpo Inteiro"
+Status.Text = "Status: Normal (Mortal)"
 Status.TextColor3 = Color3.fromRGB(150, 150, 150)
 Status.Font = Enum.Font.Gotham
 Status.TextSize = 12
@@ -123,8 +126,8 @@ Status.Parent = MainFrame
 local FloatIcon = Instance.new("TextButton")
 FloatIcon.Size = UDim2.new(0, 50, 0, 50)
 FloatIcon.Position = UDim2.new(0.1, 0, 0.2, 0)
-FloatIcon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-FloatIcon.Text = "🗿"
+FloatIcon.BackgroundColor3 = Color3.fromRGB(170, 0, 255)
+FloatIcon.Text = "🧟"
 FloatIcon.TextSize = 24
 FloatIcon.Visible = false
 FloatIcon.Parent = ScreenGui
@@ -134,64 +137,86 @@ makeDraggable(MainFrame)
 makeDraggable(FloatIcon)
 
 -- ==============================================================================
--- LÓGICA DO CORPO NULO (DELETAR TUDO)
+-- LÓGICA ZUMBI (NO ROOT)
 -- ==============================================================================
 
-local function activateStatue()
+local function activateZombie()
     local char = LocalPlayer.Character
     if not char then return end
     
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end -- Precisa da raiz pra não morrer pro server
+    -- Identifica o Tronco (R6 ou R15)
+    local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("HumanoidRootPart")
+    local root = char:FindFirstChild("HumanoidRootPart")
     
-    isStatueActive = true
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-    ToggleBtn.Text = "ESTATUA: ON (IMORTAL)"
-    Status.Text = "Corpo Deletado (Intangível)"
+    if not torso or not root then 
+        game.StarterGui:SetCore("SendNotification", {Title="Erro", Text="Personagem não carregou!", Duration=3})
+        return 
+    end
+    
+    isZombieActive = true
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 200)
+    ToggleBtn.Text = "ZUMBI: ON (IMÓVEL & IMORTAL)"
+    Status.Text = "Hitbox Removida (Seguro)"
     Status.TextColor3 = Color3.fromRGB(0, 255, 0)
     
-    -- 1. ANCORAR A RAIZ (Para não cair no void ao perder as pernas)
-    hrp.Anchored = true
-    hrp.CFrame = hrp.CFrame -- Trava na posição atual
+    -- 1. SALVAR POSIÇÃO
+    originalCFrame = root.CFrame
     
-    -- 2. DESMEMBRAMENTO TOTAL
+    -- 2. ANCORAR TUDO (Para não cair no void)
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Anchored = true
+        end
+    end
+    
+    -- 3. REMOVER A PEÇA MESTRA (ROOT PART)
+    -- Isso quebra o script de dano do inimigo
+    if root and root ~= torso then -- Garante que não é o torso em R6
+        root:Destroy()
+    end
+    
+    -- 4. REMOVER MEMBROS (Opcional, mas ajuda a evitar hits)
+    -- Mantemos a Cabeça e o Tronco para o jogo não te matar automaticamente
     for _, part in pairs(char:GetChildren()) do
-        if part:IsA("BasePart") or part:IsA("MeshPart") or part:IsA("Accessory") then
-            -- NÃO DELETAR A ROOTPART (Senão você morre)
-            if part.Name ~= "HumanoidRootPart" then
-                part:Destroy() -- Deleta Braços, Pernas, Cabeça, Chapéus
+        if part:IsA("BasePart") then
+            if part.Name == "Left Arm" or part.Name == "Right Arm" or part.Name == "Left Leg" or part.Name == "Right Leg" or
+               part.Name == "LeftUpperArm" or part.Name == "RightUpperArm" or part.Name == "LeftUpperLeg" or part.Name == "RightUpperLeg" then
+                part:Destroy()
             end
         end
     end
     
-    -- 3. ESCONDER A RAIZ (Ficar totalmente invisível)
-    hrp.Transparency = 1
-    hrp.CanCollide = false
+    -- 5. TRAVA DE VIDA (Loop Rápido)
+    getgenv().ZombieLoop = RunService.RenderStepped:Connect(function()
+        if not isZombieActive then return end
+        local h = char:FindFirstChild("Humanoid")
+        if h then
+            h.Health = h.MaxHealth
+            -- Evita estado de morte
+            if h:GetState() == Enum.HumanoidStateType.Dead then
+                h:ChangeState(Enum.HumanoidStateType.Physics)
+            end
+        end
+    end)
     
-    -- Opcional: Remove o rosto se sobrar
-    local head = char:FindFirstChild("Head")
-    if head then head:Destroy() end
-    
-    game.StarterGui:SetCore("SendNotification", {Title="GOD V7", Text="Seu corpo físico foi removido!", Duration=3})
+    game.StarterGui:SetCore("SendNotification", {Title="GOD V8", Text="Modo Zumbi Ativo! Não se mova.", Duration=5})
 end
 
 local function resetCharacter()
-    -- Para voltar ao normal, a única forma é resetar o personagem (morrer de propósito)
-    -- Pois não tem como "recriar" pernas deletadas.
+    -- Para sair, precisamos morrer de verdade
     local char = LocalPlayer.Character
     if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then
-            hum.Health = 0 -- Reseta para voltar a ter corpo
-        end
+        -- Desancora para cair ou força morte
+        local h = char:FindFirstChild("Humanoid")
+        if h then h.Health = 0 end
     end
     
-    isStatueActive = false
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleBtn.Text = "ATIVAR MODO ESTATUA"
-    Status.Text = "Reiniciando..."
+    if getgenv().ZombieLoop then getgenv().ZombieLoop:Disconnect() end
+    isZombieActive = false
+    
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    ToggleBtn.Text = "ATIVAR MODO ZUMBI"
+    Status.Text = "Resetando..."
 end
 
 -- ==============================================================================
@@ -199,11 +224,10 @@ end
 -- ==============================================================================
 
 ToggleBtn.MouseButton1Click:Connect(function()
-    if isStatueActive then
-        -- Se já está ativo, o botão serve para resetar e voltar ao normal
+    if isZombieActive then
         resetCharacter()
     else
-        activateStatue()
+        activateZombie()
     end
 end)
 
@@ -221,14 +245,12 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
--- Reativar botões ao renascer
 LocalPlayer.CharacterAdded:Connect(function()
-    isStatueActive = false
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleBtn.Text = "ATIVAR MODO ESTATUA"
-    Status.Text = "Corpo: Sólido"
-    Status.TextColor3 = Color3.fromRGB(150, 150, 150)
+    isZombieActive = false
+    if getgenv().ZombieLoop then getgenv().ZombieLoop:Disconnect() end
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    ToggleBtn.Text = "ATIVAR MODO ZUMBI"
+    Status.Text = "Normal"
 end)
 
-game.StarterGui:SetCore("SendNotification", {Title="Werbert God V7", Text="Modo Estátua Carregado!", Duration=5})
+game.StarterGui:SetCore("SendNotification", {Title="Werbert God V8", Text="Imortalidade Estática Pronta!", Duration=5})
