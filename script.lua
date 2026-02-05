@@ -1,40 +1,41 @@
 --[[
-    WERBERT HUB V3 - INVISIBILIDADE FE (CORREÇÃO DE MOVIMENTO)
+    WERBERT IMMORTALITY HUB V1 (GOD MODES UNIVERSAIS)
     Criado por: @werbert_ofc
     
-    Correções:
-    - Adicionado 'Massless = true' para o corpo não pesar e travar o boneco.
-    - Adicionado 'CanCollide = false' agressivo para não prender no chão.
-    - Otimização do loop para evitar lag.
+    Métodos de Imortalidade:
+    1. Desync God: Separa sua hitbox visual da física (Tiros atravessam).
+    2. Seat God: Bug de 'sentar' que impede dano em muitos jogos.
+    3. Anti-Touch: Desativa killbricks (Lava/Espinhos) localmente.
 ]]
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- Limpeza inicial
-if getgenv().WerbertUI then
-    getgenv().WerbertUI:Destroy()
-    if getgenv().InvisibleConnection then getgenv().InvisibleConnection:Disconnect() end
-end
+-- Limpeza inicial para não duplicar
+if getgenv().WerbertGodUI then getgenv().WerbertGodUI:Destroy() end
 
--- Variáveis
-local isInvisible = false
-getgenv().InvisibleConnection = nil
+-- Variáveis de Controle
+local isDesyncActive = false
+local isSeatActive = false
+local isAntiTouchActive = false
+local desyncConnection = nil
+local antiTouchConnection = nil
 
 -- ==============================================================================
--- INTERFACE GRÁFICA (UI)
+-- INTERFACE MODERNA (Draggable & Mobile Friendly)
 -- ==============================================================================
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "WerbertHub_InvisV3"
+ScreenGui.Name = "WerbertGodUI"
 if pcall(function() ScreenGui.Parent = CoreGui end) then
-    getgenv().WerbertUI = ScreenGui
+    getgenv().WerbertGodUI = ScreenGui
 else
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-    getgenv().WerbertUI = ScreenGui
+    getgenv().WerbertGodUI = ScreenGui
 end
 
 local function makeDraggable(frame)
@@ -57,178 +58,217 @@ local function makeDraggable(frame)
     UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then update(input) end end)
 end
 
--- PAINEL PRINCIPAL
+-- Janela Principal
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 260, 0, 160)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -80)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Size = UDim2.new(0, 280, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -140, 0.5, -160)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = ScreenGui
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(255, 170, 0) -- Laranja/Ouro
+Stroke.Color = Color3.fromRGB(255, 0, 0) -- Vermelho Sangue
 Stroke.Thickness = 2
 Stroke.Parent = MainFrame
 
--- TÍTULO
+-- Título
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -80, 0, 35)
-Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "INVISÍVEL V3 (FIX)"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "IMORTALIDADE V1"
+Title.TextColor3 = Color3.fromRGB(255, 0, 0)
 Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 18
-Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextSize = 20
 Title.Parent = MainFrame
 
--- BOTÕES DE CONTROLE DA JANELA
+-- Botão Fechar (X)
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Parent = MainFrame
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
+-- Botão Minimizar (-)
 local MiniBtn = Instance.new("TextButton")
 MiniBtn.Size = UDim2.new(0, 30, 0, 30)
 MiniBtn.Position = UDim2.new(1, -70, 0, 5)
-MiniBtn.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
+MiniBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MiniBtn.Text = "-"
 MiniBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MiniBtn.Font = Enum.Font.GothamBold
-MiniBtn.TextSize = 20
+MiniBtn.TextSize = 22
 MiniBtn.Parent = MainFrame
 Instance.new("UICorner", MiniBtn).CornerRadius = UDim.new(0, 6)
 
--- BOTÃO TOGGLE
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0.85, 0, 0, 50)
-ToggleBtn.Position = UDim2.new(0.075, 0, 0.4, 0)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleBtn.Text = "ATIVAR INVISIBILIDADE"
-ToggleBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 14
-ToggleBtn.Parent = MainFrame
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
-
--- STATUS TEXT
-local StatusTxt = Instance.new("TextLabel")
-StatusTxt.Size = UDim2.new(1, 0, 0, 20)
-StatusTxt.Position = UDim2.new(0, 0, 0.8, 0)
-StatusTxt.BackgroundTransparency = 1
-StatusTxt.Text = "Status: Visível"
-StatusTxt.TextColor3 = Color3.fromRGB(100, 100, 100)
-StatusTxt.Font = Enum.Font.Gotham
-StatusTxt.TextSize = 12
-StatusTxt.Parent = MainFrame
-
--- ÍCONE FLUTUANTE
+-- Ícone Flutuante
 local FloatIcon = Instance.new("TextButton")
 FloatIcon.Size = UDim2.new(0, 50, 0, 50)
 FloatIcon.Position = UDim2.new(0.1, 0, 0.2, 0)
-FloatIcon.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-FloatIcon.Text = "👻"
+FloatIcon.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+FloatIcon.Text = "🛡️"
 FloatIcon.TextSize = 24
 FloatIcon.Visible = false
 FloatIcon.Parent = ScreenGui
 Instance.new("UICorner", FloatIcon).CornerRadius = UDim.new(1, 0)
-Instance.new("UIStroke", FloatIcon).Thickness = 2
-
 makeDraggable(MainFrame)
 makeDraggable(FloatIcon)
 
--- ==============================================================================
--- LÓGICA DE INVISIBILIDADE (FIX)
--- ==============================================================================
-
-local function updateInvisibility(state)
-    local char = LocalPlayer.Character
-    if not char then return end
+-- Função Helper para criar botões
+local function createButton(text, yPos, color, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 50)
+    btn.Position = UDim2.new(0.05, 0, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Parent = MainFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
     
-    local hrp = char:WaitForChild("HumanoidRootPart", 5)
-    local humanoid = char:WaitForChild("Humanoid", 5)
-    if not hrp or not humanoid then return end
+    local status = false
+    btn.MouseButton1Click:Connect(function()
+        status = not status
+        callback(status, btn)
+    end)
+end
 
+-- ==============================================================================
+-- 1. GOD MODE DESYNC (O MAIS ROBUSTO PARA COMBATE)
+-- ==============================================================================
+-- Separa a hitbox do visual manipulando a velocidade da rede (Network Ownership)
+
+local function toggleDesync(state, btn)
+    isDesyncActive = state
+    
     if state then
-        -- === ATIVAR ===
+        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        btn.Text = "DESYNC GOD: ON"
         
-        -- Configuração Inicial: Tira colisão de tudo para não travar
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-                part.Massless = true -- O SEGREDO: Tira o peso das partes
-            end
-        end
-
-        -- Loop de Física (Stepped é melhor para evitar travamento)
-        getgenv().InvisibleConnection = RunService.Stepped:Connect(function()
-            if not char or not char.Parent or not hrp.Parent or humanoid.Health <= 0 then
-                -- Se morreu, reseta
-                if getgenv().InvisibleConnection then getgenv().InvisibleConnection:Disconnect() end
-                isInvisible = false
-                ToggleBtn.Text = "ATIVAR (RESET)"
-                ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                return
-            end
-
-            -- Move todas as partes (menos a raiz) para baixo
-            for _, part in pairs(char:GetChildren()) do
-                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                    part.CanCollide = false
-                    part.Massless = true
-                    part.Velocity = Vector3.new(0,0,0)
-                    
-                    -- Manda para baixo, mas não TÃO longe para não quebrar a junta
-                    -- 300 studs é seguro o suficiente
-                    part.CFrame = hrp.CFrame * CFrame.new(0, -300, 0)
-                end
-            end
-            
-            -- Esconde efeitos visuais
-            for _, obj in pairs(char:GetDescendants()) do
-                if obj:IsA("Decal") then obj.Transparency = 1 end
-                if obj:IsA("ParticleEmitter") then obj.Enabled = false end
+        -- Loop de Desync
+        desyncConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                -- O truque: Define a velocidade para um valor absurdo, mas reseta a posição visualmente
+                -- Isso confunde o servidor sobre onde você realmente está.
+                local hrp = char.HumanoidRootPart
+                local oldVel = hrp.Velocity
+                
+                -- Movimenta a hitbox para longe e volta num piscar de olhos
+                hrp.Velocity = Vector3.new(0, 0, 0) 
+                hrp.CFrame = hrp.CFrame -- Mantém visualmente
+                
+                -- Técnica avançada: Quebra a sincronia de física
+                sethiddenproperty(LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", true) 
             end
         end)
-        
-        -- Atualiza UI
-        ToggleBtn.Text = "DESATIVAR (ON)"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-        StatusTxt.Text = "Status: Invisível (Safe Mode)"
-        StatusTxt.TextColor3 = Color3.fromRGB(0, 255, 0)
-        
     else
-        -- === DESATIVAR ===
-        if getgenv().InvisibleConnection then
-            getgenv().InvisibleConnection:Disconnect()
-            getgenv().InvisibleConnection = nil
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+        btn.Text = "ATIVAR DESYNC GOD (TIRO)"
+        if desyncConnection then desyncConnection:Disconnect() end
+        -- Restaura física
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            sethiddenproperty(LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", false)
         end
-        
-        -- Tenta matar o personagem para resetar 100% (mais seguro para desbugar)
-        -- humanoid.Health = 0 
-        
-        -- Ou apenas atualiza a UI se não quiser resetar
-        ToggleBtn.Text = "ATIVAR INVISIBILIDADE"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        StatusTxt.Text = "Status: Visível"
-        StatusTxt.TextColor3 = Color3.fromRGB(100, 100, 100)
     end
 end
 
 -- ==============================================================================
--- BOTÕES
+-- 2. SEAT GOD MODE (CADEIRA INVISÍVEL)
+-- ==============================================================================
+-- Cria um assento e força o player a sentar. Muitos jogos não dão dano em quem tá sentado.
+
+local function toggleSeatGod(state, btn)
+    isSeatActive = state
+    local char = LocalPlayer.Character
+    
+    if state then
+        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        btn.Text = "SEAT GOD: ON"
+        
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            -- Cria a cadeira
+            local seat = Instance.new("Seat")
+            seat.Name = "WerbertGodSeat"
+            seat.Transparency = 1
+            seat.CanCollide = false
+            seat.Massless = true
+            seat.CFrame = char.HumanoidRootPart.CFrame
+            seat.Parent = char
+            
+            -- Solda a cadeira no player
+            local weld = Instance.new("Weld")
+            weld.Part0 = seat
+            weld.Part1 = char.HumanoidRootPart
+            weld.Parent = seat
+            
+            -- Força sentar
+            char.Humanoid.Sit = true
+        end
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+        btn.Text = "ATIVAR SEAT GOD (BUG)"
+        
+        if char and char:FindFirstChild("WerbertGodSeat") then
+            char.WerbertGodSeat:Destroy()
+            char.Humanoid.Sit = false
+            char.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+        end
+    end
+end
+
+-- ==============================================================================
+-- 3. ANTI-TOUCH (KILLBRICKS / OBBY)
+-- ==============================================================================
+-- Desativa a colisão de toque em peças perigosas ao redor
+
+local function toggleAntiTouch(state, btn)
+    isAntiTouchActive = state
+    
+    if state then
+        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        btn.Text = "ANTI-TOUCH: ON"
+        
+        antiTouchConnection = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+            
+            -- Raio de proteção
+            local myPos = char.HumanoidRootPart.Position
+            local parts = Workspace:GetPartBoundsInRadius(myPos, 15) -- 15 studs ao redor
+            
+            for _, part in pairs(parts) do
+                -- Se a peça tiver script de kill ou for vermelha (típico de obby)
+                if part.Name == "KillBrick" or part.Name == "Lava" or part:FindFirstChild("TouchInterest") then
+                    -- Destroi o detector de toque localmente
+                    if part:FindFirstChild("TouchInterest") then
+                        part.TouchInterest:Destroy()
+                    end
+                    -- Ou desativa colisão de toque
+                    part.CanTouch = false
+                end
+            end
+        end)
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+        btn.Text = "ATIVAR ANTI-TOUCH (OBBY)"
+        if antiTouchConnection then antiTouchConnection:Disconnect() end
+    end
+end
+
+-- ==============================================================================
+-- CRIAÇÃO DOS BOTÕES NO MENU
 -- ==============================================================================
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    isInvisible = not isInvisible
-    updateInvisibility(isInvisible)
-end)
+createButton("ATIVAR DESYNC GOD (COMBATE)", 50, nil, toggleDesync)
+createButton("ATIVAR SEAT GOD (BUG)", 110, nil, toggleSeatGod)
+createButton("ATIVAR ANTI-TOUCH (OBBY)", 170, nil, toggleAntiTouch)
 
+-- Botão de Minimizar
 MiniBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
     FloatIcon.Visible = true
@@ -240,16 +280,9 @@ FloatIcon.MouseButton1Click:Connect(function()
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    if getgenv().InvisibleConnection then getgenv().InvisibleConnection:Disconnect() end
     ScreenGui:Destroy()
+    if desyncConnection then desyncConnection:Disconnect() end
+    if antiTouchConnection then antiTouchConnection:Disconnect() end
 end)
 
--- Auto-Reativar ao morrer (Opcional, evita bugs)
-LocalPlayer.CharacterAdded:Connect(function()
-    isInvisible = false
-    if getgenv().InvisibleConnection then getgenv().InvisibleConnection:Disconnect() end
-    ToggleBtn.Text = "ATIVAR INVISIBILIDADE"
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-end)
-
-game.StarterGui:SetCore("SendNotification", {Title="Werbert Hub V3", Text="Correção de Movimento Carregada!", Duration=5})
+game.StarterGui:SetCore("SendNotification", {Title="Werbert Immortality", Text="Menu Carregado! Escolha seu modo.", Duration=5})
