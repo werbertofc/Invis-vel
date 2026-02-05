@@ -1,36 +1,27 @@
 --[[
-    WERBERT IMMORTALITY HUB V1 (GOD MODES UNIVERSAIS)
+    WERBERT GOD HUB V2 - BRUTE FORCE (IMORTALIDADE AGRESSIVA)
     Criado por: @werbert_ofc
     
-    Métodos de Imortalidade:
-    1. Desync God: Separa sua hitbox visual da física (Tiros atravessam).
-    2. Seat God: Bug de 'sentar' que impede dano em muitos jogos.
-    3. Anti-Touch: Desativa killbricks (Lava/Espinhos) localmente.
+    Estratégia:
+    1. Health Spam: Cura mais rápido que o dano (RenderStepped).
+    2. State Protection: Desativa o estado de 'Morto' no Humanoid.
+    3. ForceField: Cria proteção nativa se o jogo permitir.
 ]]
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- Limpeza inicial para não duplicar
+-- Limpeza
+if getgenv().GodLoop then getgenv().GodLoop:Disconnect() end
 if getgenv().WerbertGodUI then getgenv().WerbertGodUI:Destroy() end
 
--- Variáveis de Controle
-local isDesyncActive = false
-local isSeatActive = false
-local isAntiTouchActive = false
-local desyncConnection = nil
-local antiTouchConnection = nil
-
 -- ==============================================================================
--- INTERFACE MODERNA (Draggable & Mobile Friendly)
+-- UI MODERNA
 -- ==============================================================================
-
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "WerbertGodUI"
+ScreenGui.Name = "WerbertGodUI_V2"
 if pcall(function() ScreenGui.Parent = CoreGui end) then
     getgenv().WerbertGodUI = ScreenGui
 else
@@ -38,251 +29,161 @@ else
     getgenv().WerbertGodUI = ScreenGui
 end
 
-local function makeDraggable(frame)
-    local dragging, dragInput, dragStart, startPos
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
-        end
-    end)
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
-    end)
-    UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then update(input) end end)
-end
-
 -- Janela Principal
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 280, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -160)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 250, 0, 180)
+Frame.Position = UDim2.new(0.5, -125, 0.5, -90)
+Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Frame.BorderSizePixel = 0
+Frame.Parent = ScreenGui
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(255, 0, 0) -- Vermelho Sangue
+Stroke.Color = Color3.fromRGB(255, 0, 0)
 Stroke.Thickness = 2
-Stroke.Parent = MainFrame
+Stroke.Parent = Frame
 
 -- Título
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "IMORTALIDADE V1"
+Title.Text = "GOD MODE V2 (BRUTO)"
 Title.TextColor3 = Color3.fromRGB(255, 0, 0)
 Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 20
-Title.Parent = MainFrame
+Title.TextSize = 16
+Title.Parent = Frame
 
--- Botão Fechar (X)
+-- Status
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, 0, 0, 20)
+Status.Position = UDim2.new(0, 0, 0.8, 0)
+Status.BackgroundTransparency = 1
+Status.Text = "Status: Vulnerável"
+Status.TextColor3 = Color3.fromRGB(150, 150, 150)
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 12
+Status.Parent = Frame
+
+-- Botão Ativar
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 50)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.35, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleBtn.Text = "ATIVAR IMORTALIDADE"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Parent = Frame
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+
+-- Botão Fechar
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = MainFrame
+CloseBtn.Parent = Frame
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
--- Botão Minimizar (-)
-local MiniBtn = Instance.new("TextButton")
-MiniBtn.Size = UDim2.new(0, 30, 0, 30)
-MiniBtn.Position = UDim2.new(1, -70, 0, 5)
-MiniBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-MiniBtn.Text = "-"
-MiniBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MiniBtn.Font = Enum.Font.GothamBold
-MiniBtn.TextSize = 22
-MiniBtn.Parent = MainFrame
-Instance.new("UICorner", MiniBtn).CornerRadius = UDim.new(0, 6)
+-- Arrastar
+local UserInputService = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Frame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    end
+end)
+Frame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then update(input) end end)
 
--- Ícone Flutuante
-local FloatIcon = Instance.new("TextButton")
-FloatIcon.Size = UDim2.new(0, 50, 0, 50)
-FloatIcon.Position = UDim2.new(0.1, 0, 0.2, 0)
-FloatIcon.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-FloatIcon.Text = "🛡️"
-FloatIcon.TextSize = 24
-FloatIcon.Visible = false
-FloatIcon.Parent = ScreenGui
-Instance.new("UICorner", FloatIcon).CornerRadius = UDim.new(1, 0)
-makeDraggable(MainFrame)
-makeDraggable(FloatIcon)
+-- ==============================================================================
+-- LÓGICA DE IMORTALIDADE (BRUTE FORCE)
+-- ==============================================================================
 
--- Função Helper para criar botões
-local function createButton(text, yPos, color, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 50)
-    btn.Position = UDim2.new(0.05, 0, 0, yPos)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 14
-    btn.Parent = MainFrame
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    
-    local status = false
-    btn.MouseButton1Click:Connect(function()
-        status = not status
-        callback(status, btn)
+local isActive = false
+
+local function activateGodMode()
+    isActive = true
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+    ToggleBtn.Text = "IMORTALIDADE: ON"
+    Status.Text = "Status: Protegido (Health Lock)"
+    Status.TextColor3 = Color3.fromRGB(0, 255, 0)
+
+    -- Loop Agressivo (RenderStepped = Antes de desenhar a tela)
+    getgenv().GodLoop = RunService.RenderStepped:Connect(function()
+        if not isActive then return end
+        
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                -- 1. HEAL SPAM: Se a vida baixar de 100%, enche na hora
+                if hum.Health < hum.MaxHealth then
+                    hum.Health = hum.MaxHealth
+                end
+                
+                -- 2. ANTI-DEATH STATE: Impede o jogo de te marcar como morto
+                if hum:GetState() == Enum.HumanoidStateType.Dead then
+                    hum:ChangeState(Enum.HumanoidStateType.Running)
+                end
+                
+                -- 3. FORCEFIELD: Cria um escudo se não tiver
+                if not char:FindFirstChild("WerbertFF") then
+                    local ff = Instance.new("ForceField")
+                    ff.Name = "WerbertFF"
+                    ff.Visible = false -- Invisível para não atrapalhar a visão
+                    ff.Parent = char
+                end
+            end
+        end
     end)
 end
 
--- ==============================================================================
--- 1. GOD MODE DESYNC (O MAIS ROBUSTO PARA COMBATE)
--- ==============================================================================
--- Separa a hitbox do visual manipulando a velocidade da rede (Network Ownership)
-
-local function toggleDesync(state, btn)
-    isDesyncActive = state
+local function deactivateGodMode()
+    isActive = false
+    if getgenv().GodLoop then getgenv().GodLoop:Disconnect() end
     
-    if state then
-        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-        btn.Text = "DESYNC GOD: ON"
-        
-        -- Loop de Desync
-        desyncConnection = RunService.Heartbeat:Connect(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                -- O truque: Define a velocidade para um valor absurdo, mas reseta a posição visualmente
-                -- Isso confunde o servidor sobre onde você realmente está.
-                local hrp = char.HumanoidRootPart
-                local oldVel = hrp.Velocity
-                
-                -- Movimenta a hitbox para longe e volta num piscar de olhos
-                hrp.Velocity = Vector3.new(0, 0, 0) 
-                hrp.CFrame = hrp.CFrame -- Mantém visualmente
-                
-                -- Técnica avançada: Quebra a sincronia de física
-                sethiddenproperty(LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", true) 
-            end
-        end)
-    else
-        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-        btn.Text = "ATIVAR DESYNC GOD (TIRO)"
-        if desyncConnection then desyncConnection:Disconnect() end
-        -- Restaura física
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            sethiddenproperty(LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", false)
-        end
-    end
-end
-
--- ==============================================================================
--- 2. SEAT GOD MODE (CADEIRA INVISÍVEL)
--- ==============================================================================
--- Cria um assento e força o player a sentar. Muitos jogos não dão dano em quem tá sentado.
-
-local function toggleSeatGod(state, btn)
-    isSeatActive = state
+    -- Remove o escudo
     local char = LocalPlayer.Character
-    
-    if state then
-        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-        btn.Text = "SEAT GOD: ON"
-        
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            -- Cria a cadeira
-            local seat = Instance.new("Seat")
-            seat.Name = "WerbertGodSeat"
-            seat.Transparency = 1
-            seat.CanCollide = false
-            seat.Massless = true
-            seat.CFrame = char.HumanoidRootPart.CFrame
-            seat.Parent = char
-            
-            -- Solda a cadeira no player
-            local weld = Instance.new("Weld")
-            weld.Part0 = seat
-            weld.Part1 = char.HumanoidRootPart
-            weld.Parent = seat
-            
-            -- Força sentar
-            char.Humanoid.Sit = true
-        end
-    else
-        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-        btn.Text = "ATIVAR SEAT GOD (BUG)"
-        
-        if char and char:FindFirstChild("WerbertGodSeat") then
-            char.WerbertGodSeat:Destroy()
-            char.Humanoid.Sit = false
-            char.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
-        end
+    if char and char:FindFirstChild("WerbertFF") then
+        char.WerbertFF:Destroy()
     end
+    
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    ToggleBtn.Text = "ATIVAR IMORTALIDADE"
+    Status.Text = "Status: Vulnerável"
+    Status.TextColor3 = Color3.fromRGB(150, 150, 150)
 end
 
--- ==============================================================================
--- 3. ANTI-TOUCH (KILLBRICKS / OBBY)
--- ==============================================================================
--- Desativa a colisão de toque em peças perigosas ao redor
-
-local function toggleAntiTouch(state, btn)
-    isAntiTouchActive = state
-    
-    if state then
-        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-        btn.Text = "ANTI-TOUCH: ON"
-        
-        antiTouchConnection = RunService.RenderStepped:Connect(function()
-            local char = LocalPlayer.Character
-            if not char then return end
-            
-            -- Raio de proteção
-            local myPos = char.HumanoidRootPart.Position
-            local parts = Workspace:GetPartBoundsInRadius(myPos, 15) -- 15 studs ao redor
-            
-            for _, part in pairs(parts) do
-                -- Se a peça tiver script de kill ou for vermelha (típico de obby)
-                if part.Name == "KillBrick" or part.Name == "Lava" or part:FindFirstChild("TouchInterest") then
-                    -- Destroi o detector de toque localmente
-                    if part:FindFirstChild("TouchInterest") then
-                        part.TouchInterest:Destroy()
-                    end
-                    -- Ou desativa colisão de toque
-                    part.CanTouch = false
-                end
-            end
-        end)
+-- Botões
+ToggleBtn.MouseButton1Click:Connect(function()
+    if isActive then
+        deactivateGodMode()
     else
-        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-        btn.Text = "ATIVAR ANTI-TOUCH (OBBY)"
-        if antiTouchConnection then antiTouchConnection:Disconnect() end
+        activateGodMode()
     end
-end
-
--- ==============================================================================
--- CRIAÇÃO DOS BOTÕES NO MENU
--- ==============================================================================
-
-createButton("ATIVAR DESYNC GOD (COMBATE)", 50, nil, toggleDesync)
-createButton("ATIVAR SEAT GOD (BUG)", 110, nil, toggleSeatGod)
-createButton("ATIVAR ANTI-TOUCH (OBBY)", 170, nil, toggleAntiTouch)
-
--- Botão de Minimizar
-MiniBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    FloatIcon.Visible = true
-end)
-
-FloatIcon.MouseButton1Click:Connect(function()
-    FloatIcon.Visible = false
-    MainFrame.Visible = true
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
+    deactivateGodMode()
     ScreenGui:Destroy()
-    if desyncConnection then desyncConnection:Disconnect() end
-    if antiTouchConnection then antiTouchConnection:Disconnect() end
 end)
 
-game.StarterGui:SetCore("SendNotification", {Title="Werbert Immortality", Text="Menu Carregado! Escolha seu modo.", Duration=5})
+-- Reativar ao morrer (caso o dano seja Hitkill instantâneo e passe pelo filtro)
+LocalPlayer.CharacterAdded:Connect(function()
+    if isActive then
+        task.wait(1) -- Espera carregar
+        activateGodMode() -- Liga de novo
+    end
+end)
+
+game.StarterGui:SetCore("SendNotification", {Title="Werbert God V2", Text="Modo Bruto Carregado!", Duration=5})
