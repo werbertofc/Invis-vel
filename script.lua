@@ -1,11 +1,11 @@
 --[[
-    WERBERT GOD V12.5 - HÍBRIDO + MENU COMPLETO
+    WERBERT GOD MODE - STANDALONE (SOLO)
     Criado por: @werbert_ofc
     
-    ATUALIZAÇÃO DE UI:
-    - Botão Minimizar (-) agora ativa o Ícone Flutuante.
-    - Botão Fechar (X) desliga o modo Deus e fecha o script.
-    - Lógica Híbrida mantida (Root Delete + Phantom Limbs).
+    CARACTERÍSTICAS:
+    - Este script é INDEPENDENTE. Não entra em conflito com outros menus.
+    - Tecnologia: Omega V13 (Root Delete + Phantom + Health Lock).
+    - Controles: Menu Completo (Minimizar/Fechar/Arrastar).
 ]]
 
 local Players = game:GetService("Players")
@@ -15,29 +15,28 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- Limpeza de versões anteriores
-if getgenv().WerbertUI then getgenv().WerbertUI:Destroy() end
-if getgenv().HybridLoop then getgenv().HybridLoop:Disconnect() end
+-- ==============================================================================
+-- LIMPEZA EXCLUSIVA (Só fecha se for ele mesmo)
+-- ==============================================================================
+if getgenv().WerbertGodSoloUI then getgenv().WerbertGodSoloUI:Destroy() end
+if getgenv().GodSoloLoop then getgenv().GodSoloLoop:Disconnect() end
 
-local isHybridActive = false
-local speed = 30 -- Velocidade de voo
-
--- Controles de Voo
+local isGodActive = false
+local flySpeed = 50 
 local keys = {W=false, A=false, S=false, D=false, Space=false, Shift=false}
 
 -- ==============================================================================
--- INTERFACE GRÁFICA COMPLETA
+-- INTERFACE (ROXO ÚNICO)
 -- ==============================================================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "WerbertGodV12_5"
+ScreenGui.Name = "WerbertGodMode_Solo"
 if pcall(function() ScreenGui.Parent = CoreGui end) then
-    getgenv().WerbertUI = ScreenGui
+    getgenv().WerbertGodSoloUI = ScreenGui
 else
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-    getgenv().WerbertUI = ScreenGui
+    getgenv().WerbertGodSoloUI = ScreenGui
 end
 
--- Função para Arrastar (PC e Mobile)
 local function makeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
     local function update(input)
@@ -58,31 +57,30 @@ local function makeDraggable(frame)
     UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then update(input) end end)
 end
 
--- Janela Principal
+-- JANELA
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 260, 0, 180)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -90)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 0, 0) -- Vermelho Sangue
+MainFrame.Size = UDim2.new(0, 250, 0, 180)
+MainFrame.Position = UDim2.new(0.5, -125, 0.8, 0) -- Posição mais baixa pra não atrapalhar
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 0, 20)
 MainFrame.BorderSizePixel = 0
-MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(255, 0, 0)
+Stroke.Color = Color3.fromRGB(150, 0, 255)
 Stroke.Thickness = 2
 Stroke.Parent = MainFrame
 
--- Título
+-- TÍTULO
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "GOD V12.5: FINAL"
-Title.TextColor3 = Color3.fromRGB(255, 80, 80)
+Title.Text = "GOD MODE: SOLO"
+Title.TextColor3 = Color3.fromRGB(200, 100, 255)
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 18
 Title.Parent = MainFrame
 
--- Botão Fechar (X) - Para tudo
+-- BOTÕES DE JANELA
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
@@ -93,11 +91,10 @@ CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Parent = MainFrame
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
--- Botão Minimizar (-)
 local MiniBtn = Instance.new("TextButton")
 MiniBtn.Size = UDim2.new(0, 30, 0, 30)
 MiniBtn.Position = UDim2.new(1, -70, 0, 5)
-MiniBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MiniBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 120)
 MiniBtn.Text = "-"
 MiniBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MiniBtn.Font = Enum.Font.GothamBold
@@ -105,37 +102,39 @@ MiniBtn.TextSize = 20
 MiniBtn.Parent = MainFrame
 Instance.new("UICorner", MiniBtn).CornerRadius = UDim.new(0, 6)
 
--- Botão Ativar (Toggle)
+-- BOTÃO TOGGLE
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0.85, 0, 0, 60)
 ToggleBtn.Position = UDim2.new(0.075, 0, 0.35, 0)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ToggleBtn.Text = "ATIVAR GOD MODE"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 80)
+ToggleBtn.Text = "ATIVAR IMORTALIDADE"
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextSize = 14
 ToggleBtn.Parent = MainFrame
 Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
 
--- Status
+-- STATUS
 local Status = Instance.new("TextLabel")
 Status.Size = UDim2.new(1, 0, 0, 20)
 Status.Position = UDim2.new(0, 0, 0.75, 0)
 Status.BackgroundTransparency = 1
-Status.Text = "Status: Vulnerável"
+Status.Text = "Status: Normal"
 Status.TextColor3 = Color3.fromRGB(150, 150, 150)
 Status.Font = Enum.Font.Gotham
 Status.TextSize = 12
 Status.Parent = MainFrame
 
--- ÍCONE FLUTUANTE (Para reabrir)
+-- ÍCONE FLUTUANTE
 local FloatIcon = Instance.new("TextButton")
 FloatIcon.Size = UDim2.new(0, 50, 0, 50)
-FloatIcon.Position = UDim2.new(0.1, 0, 0.2, 0)
-FloatIcon.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-FloatIcon.Text = "🛡️"
+FloatIcon.Position = UDim2.new(0.9, -60, 0.5, 0) -- Canto direito
+FloatIcon.BackgroundColor3 = Color3.fromRGB(150, 0, 255)
+FloatIcon.Text = "Ω"
+FloatIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+FloatIcon.Font = Enum.Font.GothamBlack
 FloatIcon.TextSize = 24
-FloatIcon.Visible = false -- Começa escondido
+FloatIcon.Visible = false
 FloatIcon.Parent = ScreenGui
 Instance.new("UICorner", FloatIcon).CornerRadius = UDim.new(1, 0)
 Instance.new("UIStroke", FloatIcon).Color = Color3.fromRGB(255, 255, 255)
@@ -145,33 +144,17 @@ makeDraggable(MainFrame)
 makeDraggable(FloatIcon)
 
 -- ==============================================================================
--- SISTEMA DE MOVIMENTO (WASD/Mobile)
+-- LÓGICA DE MOVIMENTO (WASD + Voo)
 -- ==============================================================================
 
-UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.W then keys.W = true end
-    if input.KeyCode == Enum.KeyCode.A then keys.A = true end
-    if input.KeyCode == Enum.KeyCode.S then keys.S = true end
-    if input.KeyCode == Enum.KeyCode.D then keys.D = true end
-    if input.KeyCode == Enum.KeyCode.Space then keys.Space = true end
-    if input.KeyCode == Enum.KeyCode.LeftShift then keys.Shift = true end
-end)
+UserInputService.InputBegan:Connect(function(i,g) if not g then if keys[i.KeyCode.Name] ~= nil then keys[i.KeyCode.Name]=true end end end)
+UserInputService.InputEnded:Connect(function(i) if keys[i.KeyCode.Name] ~= nil then keys[i.KeyCode.Name]=false end end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.W then keys.W = false end
-    if input.KeyCode == Enum.KeyCode.A then keys.A = false end
-    if input.KeyCode == Enum.KeyCode.S then keys.S = false end
-    if input.KeyCode == Enum.KeyCode.D then keys.D = false end
-    if input.KeyCode == Enum.KeyCode.Space then keys.Space = false end
-    if input.KeyCode == Enum.KeyCode.LeftShift then keys.Shift = false end
-end)
-
-local function startFlight(part)
-    getgenv().HybridLoop = RunService.RenderStepped:Connect(function(dt)
+local function startGodLoop(part)
+    getgenv().GodSoloLoop = RunService.RenderStepped:Connect(function(dt)
         if not part or not part.Parent then return end
         
-        -- Voo (Câmera)
+        -- VOO
         local cam = Workspace.CurrentCamera.CFrame
         local move = Vector3.new(0,0,0)
         
@@ -183,121 +166,102 @@ local function startFlight(part)
         if keys.Shift then move = move - Vector3.new(0,1,0) end
         
         if move.Magnitude > 0 then
-            move = move.Unit * speed * dt * 5
+            move = move.Unit * flySpeed * dt * 5
             part.CFrame = part.CFrame + move
         end
         part.Velocity = Vector3.new(0,0,0)
-        part.RotVelocity = Vector3.new(0,0,0)
-
-        -- Proteção Contínua (Phantom Mode)
+        
+        -- PROTEÇÃO (Phantom + Health)
         local char = LocalPlayer.Character
         if char then
             for _, limb in pairs(char:GetChildren()) do
                 if limb:IsA("BasePart") then
                     limb.CanCollide = false
-                    limb.CanTouch = false -- Anti-Lava/Poder
-                    limb.CanQuery = false -- Anti-Tiro
+                    limb.CanTouch = false
+                    limb.CanQuery = false
                     if limb:FindFirstChild("TouchInterest") then limb.TouchInterest:Destroy() end
                 end
             end
-            
-            -- Trava de Vida
-            local hum = char:FindFirstChild("Humanoid")
-            if hum then
-                if hum.Health < hum.MaxHealth then hum.Health = hum.MaxHealth end
-                hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+            local h = char:FindFirstChild("Humanoid")
+            if h then 
+                h.Health = h.MaxHealth 
+                h:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
             end
         end
     end)
 end
 
 -- ==============================================================================
--- LÓGICA DO GOD MODE (ATIVAR/DESATIVAR)
+-- LÓGICA ATIVAR/DESATIVAR
 -- ==============================================================================
 
-local function deactivateHybrid()
-    -- Reseta o loop e status
-    if getgenv().HybridLoop then getgenv().HybridLoop:Disconnect() end
-    isHybridActive = false
-    
-    -- Reseta o personagem (Mata para voltar ao normal)
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChild("Humanoid")
-        if hum then hum.Health = 0 end
-    end
-    
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    ToggleBtn.Text = "ATIVAR GOD MODE"
-    Status.Text = "Resetando..."
-end
-
-local function activateHybrid()
+local function activate()
     local char = LocalPlayer.Character
     if not char then return end
     
     local root = char:FindFirstChild("HumanoidRootPart")
     local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-    
     if not torso then return end
     
-    isHybridActive = true
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    ToggleBtn.Text = "GOD MODE: ON"
-    Status.Text = "Proteção Híbrida Ativa"
-    Status.TextColor3 = Color3.fromRGB(255, 0, 0)
+    isGodActive = true
     
-    -- 1. Deleta a Raiz (RootPart)
+    -- DELETA A RAIZ (Chave da Imortalidade)
     if root then root:Destroy() end
     
-    -- 2. Foca câmera no Torso
     Workspace.CurrentCamera.CameraSubject = torso
     
-    -- 3. Inicia Voo e Proteção
-    startFlight(torso)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+    ToggleBtn.Text = "IMORTAL: ATIVO"
+    ToggleBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    Status.Text = "Raiz Deletada | Fantasma"
+    Status.TextColor3 = Color3.fromRGB(0, 255, 0)
+    
+    startGodLoop(torso)
+    game.StarterGui:SetCore("SendNotification", {Title="Werbert God", Text="Ativado! (Solo)", Duration=3})
+end
+
+local function deactivate()
+    if getgenv().GodSoloLoop then getgenv().GodSoloLoop:Disconnect() end
+    isGodActive = false
+    
+    -- Reseta Personagem
+    local char = LocalPlayer.Character
+    if char then
+        local h = char:FindFirstChild("Humanoid")
+        if h then h.Health = 0 end
+    end
+    
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 80)
+    ToggleBtn.Text = "ATIVAR IMORTALIDADE"
+    ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Status.Text = "Resetando..."
 end
 
 -- ==============================================================================
--- LÓGICA DOS BOTÕES (UI)
+-- EVENTOS DOS BOTÕES
 -- ==============================================================================
 
--- Botão Ativar/Desativar
 ToggleBtn.MouseButton1Click:Connect(function()
-    if isHybridActive then
-        deactivateHybrid()
-    else
-        activateHybrid()
-    end
+    if isGodActive then deactivate() else activate() end
 end)
 
--- Botão Minimizar (-)
 MiniBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    FloatIcon.Visible = true -- Mostra o ícone flutuante
+    MainFrame.Visible = false; FloatIcon.Visible = true
 end)
 
--- Botão Ícone Flutuante (Restaurar)
 FloatIcon.MouseButton1Click:Connect(function()
-    FloatIcon.Visible = false -- Esconde o ícone
-    MainFrame.Visible = true  -- Mostra o menu
+    FloatIcon.Visible = false; MainFrame.Visible = true
 end)
 
--- Botão Fechar (X) - Para TUDO
 CloseBtn.MouseButton1Click:Connect(function()
-    if isHybridActive then
-        deactivateHybrid() -- Desativa o modo Deus primeiro
-    end
-    if getgenv().HybridLoop then getgenv().HybridLoop:Disconnect() end
-    ScreenGui:Destroy() -- Destroi o menu
+    if isGodActive then deactivate() end
+    ScreenGui:Destroy()
 end)
 
--- Auto-Reset se morrer
 LocalPlayer.CharacterAdded:Connect(function()
-    isHybridActive = false
-    if getgenv().HybridLoop then getgenv().HybridLoop:Disconnect() end
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    ToggleBtn.Text = "ATIVAR GOD MODE"
+    isGodActive = false
+    if getgenv().GodSoloLoop then getgenv().GodSoloLoop:Disconnect() end
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 80)
+    ToggleBtn.Text = "ATIVAR IMORTALIDADE"
     Status.Text = "Vulnerável"
 end)
-
-game.StarterGui:SetCore("SendNotification", {Title="Werbert God V12.5", Text="Menu Completo Carregado!", Duration=5})
